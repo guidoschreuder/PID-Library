@@ -23,9 +23,7 @@ class PID {
   void SetMode(int Mode);  // * sets PID to either Manual (0) or Auto (non-0)
 
   bool Compute();  // * performs the PID calculation.  it should be
-                   //   called every time loop() cycles. ON/OFF and
-                   //   calculation frequency can be set using SetMode
-                   //   SetSampleTime respectively
+                   //   called every time loop() cycles. ON/OFF  can be set using SetMode
 
   void SetOutputLimits(double, double);  // * clamps the output to a specific range. 0-255 by default, but
                                          //   it's likely the user will want to change this depending on
@@ -42,8 +40,6 @@ class PID {
                                      //   means the output will increase when error is positive. REVERSE
                                      //   means the opposite.  it's very unlikely that this will be needed
                                      //   once it is set in the constructor.
-  void SetSampleTime(int);           // * sets the frequency, in Milliseconds, with which
-                                     //   the PID calculation is performed.  default is 100
 
   //Display functions ****************************************************************
   double GetKp();      // These functions query the pid for interal values.
@@ -73,7 +69,6 @@ class PID {
 
   double outputSum, lastInput;
 
-  unsigned long SampleTime;
   double outMin, outMax;
   bool inAuto, pOnE;
 };

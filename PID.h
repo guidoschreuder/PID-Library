@@ -69,10 +69,7 @@ class PID {
   private:
   void Initialize();
 
-  PID::pid_tuning_t tuning,
-      dispTuning; // * we'll hold on to the tuning parameters in user-entered
-                  //   format for display purposes
-
+  PID::pid_tuning_t tuning;
   PID::pid_direction_t controllerDirection;
   PID::pid_proportional_mode_t pOn;
   PID::pid_mode_t mode;

@@ -8,6 +8,7 @@
 #include "PID.h"
 
 #define CLAMP_VAL(in, min, max) ((in < min) ? min : (in > max ? max : in))
+#define PID_PARAM(dir, value) (dir == PID::pid_direction_t::DIRECT ? value : -1 * value)
 
 /*Constructor (...)*********************************************************
  *    The parameters specified here are those for for which we can't set up
@@ -58,23 +59,23 @@ bool PID::Compute() {
   double input = *myInput;
   double error = *mySetpoint - input;
   double dInput = (input - lastInput);
-  outputSum += (tuning.Ki * error);
+  outputSum += (PID_PARAM(controllerDirection, tuning.Ki) * error);
 
   /*Add Proportional on Measurement, if P_ON_M is specified*/
   if (pOn != PID::pid_proportional_mode_t::on_error)
-    outputSum -= tuning.Kp * dInput;
+    outputSum -= (PID_PARAM(controllerDirection, tuning.Kp) * dInput);
 
   outputSum = CLAMP_VAL(outputSum, outMin, outMax);
 
   /*Add Proportional on Error, if P_ON_E is specified*/
   double output;
   if (pOn == PID::pid_proportional_mode_t::on_error)
-    output = tuning.Kp * error;
+    output = PID_PARAM(controllerDirection, tuning.Kp) * error;
   else
     output = 0;
 
   /*Compute Rest of PID Output*/
-  output += outputSum - tuning.Kd * dInput;
+  output += outputSum - PID_PARAM(controllerDirection, tuning.Kd) * dInput;
 
   *myOutput = CLAMP_VAL(output, outMin, outMax);
 
@@ -93,14 +94,7 @@ void PID::SetTunings(PID::pid_tuning_t Ptuning, PID::pid_proportional_mode_t POn
     return;
 
   pOn = POn;
-
-  tuning = dispTuning = Ptuning;
-
-  if (controllerDirection == REVERSE) {
-    tuning.Kp = (0 - tuning.Kp);
-    tuning.Ki = (0 - tuning.Ki);
-    tuning.Kd = (0 - tuning.Kd);
-  }
+  tuning = Ptuning;
 }
 
 /* SetTunings(...)*************************************************************
@@ -159,11 +153,6 @@ void PID::Initialize() {
  * be decreasing.  This is called from the constructor.
  ******************************************************************************/
 void PID::SetControllerDirection(PID::pid_direction_t Direction) {
-  if (mode == pid_mode_t::AUTOMATIC && Direction != controllerDirection) {
-    tuning.Kp = (0 - tuning.Kp);
-    tuning.Ki = (0 - tuning.Ki);
-    tuning.Kd = (0 - tuning.Kd);
-  }
   controllerDirection = Direction;
 }
 
@@ -172,6 +161,6 @@ void PID::SetControllerDirection(PID::pid_direction_t Direction) {
  * functions query the internal state of the PID.  they're here for display
  * purposes.  this are the functions the PID Front-end uses for example
  ******************************************************************************/
-PID::pid_tuning_t PID::GetTunings() { return dispTuning; }
+PID::pid_tuning_t PID::GetTunings() { return tuning; }
 PID::pid_mode_t PID::GetMode() { return mode; }
 PID::pid_direction_t PID::GetDirection() { return controllerDirection; }

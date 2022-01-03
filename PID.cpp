@@ -20,7 +20,7 @@ PID::PID(double* Input,
   myOutput = Output;
   myInput = Input;
   mySetpoint = Setpoint;
-  inAuto = false;
+  mode = pid_mode_t::AUTOMATIC;
 
   PID::SetOutputLimits(0, 255);  //default output limit corresponds to
                                  //the arduino pwm limits
@@ -49,7 +49,7 @@ PID::PID(double* Input,
  *   false when nothing has been done.
  **********************************************************************************/
 bool PID::Compute() {
-  if (!inAuto)
+  if (mode != pid_mode_t::AUTOMATIC)
     return false;
 
   /*Compute all the working error variables*/
@@ -59,7 +59,7 @@ bool PID::Compute() {
   outputSum += (tuning.Ki * error);
 
   /*Add Proportional on Measurement, if P_ON_M is specified*/
-  if (!pOnE)
+  if (pOn != PID::pid_proportional_mode_t::on_error)
     outputSum -= tuning.Kp * dInput;
 
   if (outputSum > outMax)
@@ -69,7 +69,7 @@ bool PID::Compute() {
 
   /*Add Proportional on Error, if P_ON_E is specified*/
   double output;
-  if (pOnE)
+  if (pOn == PID::pid_proportional_mode_t::on_error)
     output = tuning.Kp * error;
   else
     output = 0;
@@ -98,7 +98,6 @@ void PID::SetTunings(PID::pid_tuning_t Ptuning, PID::pid_proportional_mode_t POn
     return;
 
   pOn = POn;
-  pOnE = POn == PID::pid_proportional_mode_t::on_error;
 
   tuning = dispTuning = Ptuning;
 
@@ -130,7 +129,7 @@ void PID::SetOutputLimits(double Min, double Max) {
   outMin = Min;
   outMax = Max;
 
-  if (inAuto) {
+  if (mode == pid_mode_t::AUTOMATIC) {
     if (*myOutput > outMax)
       *myOutput = outMax;
     else if (*myOutput < outMin)
@@ -149,11 +148,10 @@ void PID::SetOutputLimits(double Min, double Max) {
  * automatically initialized
  ******************************************************************************/
 void PID::SetMode(PID::pid_mode_t Mode) {
-  bool newAuto = (Mode == PID::pid_mode_t::AUTOMATIC);
-  if (newAuto && !inAuto) { /*we just went from manual to auto*/
+  if (Mode == PID::pid_mode_t::AUTOMATIC && mode != Mode) { /*we just went from manual to auto*/
     PID::Initialize();
   }
-  inAuto = newAuto;
+  mode = Mode;
 }
 
 /* Initialize()****************************************************************
@@ -176,7 +174,7 @@ void PID::Initialize() {
  * be decreasing.  This is called from the constructor.
  ******************************************************************************/
 void PID::SetControllerDirection(PID::pid_direction_t Direction) {
-  if (inAuto && Direction != controllerDirection) {
+  if (mode == pid_mode_t::AUTOMATIC && Direction != controllerDirection) {
     tuning.Kp = (0 - tuning.Kp);
     tuning.Ki = (0 - tuning.Ki);
     tuning.Kd = (0 - tuning.Kd);
@@ -190,5 +188,5 @@ void PID::SetControllerDirection(PID::pid_direction_t Direction) {
  * purposes.  this are the functions the PID Front-end uses for example
  ******************************************************************************/
 PID::pid_tuning_t PID::GetTunings() { return dispTuning; }
-PID::pid_mode_t PID::GetMode() { return inAuto ? PID::pid_mode_t::AUTOMATIC : PID::pid_mode_t::MANUAL; }
+PID::pid_mode_t PID::GetMode() { return mode; }
 PID::pid_direction_t PID::GetDirection() { return controllerDirection; }

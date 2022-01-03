@@ -75,6 +75,7 @@ class PID {
 
   PID::pid_direction_t controllerDirection;
   PID::pid_proportional_mode_t pOn;
+  PID::pid_mode_t mode;
 
   double *myInput;     // * Pointers to the Input, Output, and Setpoint variables
   double *myOutput;    //   This creates a hard link between the variables and the
@@ -84,6 +85,5 @@ class PID {
   double outputSum, lastInput;
 
   double outMin, outMax;
-  bool inAuto, pOnE;
 };
 #endif

@@ -17,14 +17,26 @@ class PID {
     on_measurement,
     on_error,
   } pid_proportional_mode_t;
+  typedef struct {
+    double Kp,
+        Ki,
+        Kd;
+  } pid_tuning_t;
 
   //commonly used functions **************************************************************************
-  PID(double *, double *, double *,       // * constructor.  links the PID to the Input, Output, and
-      double, double, double, PID::pid_proportional_mode_t, PID::pid_direction_t);  //   Setpoint.  Initial tuning parameters are also set here.
+  PID(double *,
+      double *,
+      double *,       // * constructor.  links the PID to the Input, Output, and
+      PID::pid_tuning_t,
+      PID::pid_proportional_mode_t,
+      PID::pid_direction_t);  //   Setpoint.  Initial tuning parameters are also set here.
                                           //   (overload for specifying proportional mode)
 
-  PID(double *, double *, double *,  // * constructor.  links the PID to the Input, Output, and
-      double, double, double, PID::pid_direction_t);  //   Setpoint.  Initial tuning parameters are also set here
+  PID(double *,
+      double *,
+      double *,  // * constructor.  links the PID to the Input, Output, and
+      PID::pid_tuning_t,
+      PID::pid_direction_t);  //   Setpoint.  Initial tuning parameters are also set here
 
   void SetMode(PID::pid_mode_t Mode);  // * sets PID to either Manual (0) or Auto (non-0)
 
@@ -36,11 +48,11 @@ class PID {
                                          //   the application
 
   //available but not commonly used functions ********************************************************
-  void SetTunings(double, double,  // * While most users will set the tunings once in the
-                  double);         //   constructor, this function gives the user the option
+  void SetTunings(PID::pid_tuning_t);  // * While most users will set the tunings once in the
+                                   //   constructor, this function gives the user the option
                                    //   of changing tunings during runtime for Adaptive control
-  void SetTunings(double, double,  // * overload for specifying proportional mode
-                  double, int);
+  void SetTunings(PID::pid_tuning_t,  // * overload for specifying proportional mode
+                  PID::pid_proportional_mode_t);
 
   void SetControllerDirection(PID::pid_direction_t);  // * Sets the Direction, or "Action" of the controller. DIRECT
                                      //   means the output will increase when error is positive. REVERSE
@@ -48,25 +60,21 @@ class PID {
                                      //   once it is set in the constructor.
 
   //Display functions ****************************************************************
-  double GetKp();      // These functions query the pid for interal values.
-  double GetKi();      //  they were created mainly for the pid front-end,
-  double GetKd();      // where it's important to know what is actually
+  PID::pid_tuning_t GetTunings();  // This function query the pid for interal values.
+                                   //  they were created mainly for the pid front-end,
+                                   // where it's important to know what is actually
   PID::pid_mode_t GetMode();       //  inside the PID.
   PID::pid_direction_t GetDirection();  //
 
   private:
   void Initialize();
 
-  double dispKp;  // * we'll hold on to the tuning parameters in user-entered
-  double dispKi;  //   format for display purposes
-  double dispKd;  //
-
-  double kp;  // * (P)roportional Tuning Parameter
-  double ki;  // * (I)ntegral Tuning Parameter
-  double kd;  // * (D)erivative Tuning Parameter
+  PID::pid_tuning_t tuning,
+      dispTuning; // * we'll hold on to the tuning parameters in user-entered
+                  //   format for display purposes
 
   PID::pid_direction_t controllerDirection;
-  int pOn;
+  PID::pid_proportional_mode_t pOn;
 
   double *myInput;     // * Pointers to the Input, Output, and Setpoint variables
   double *myOutput;    //   This creates a hard link between the variables and the

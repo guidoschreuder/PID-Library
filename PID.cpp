@@ -14,9 +14,7 @@
 PID::PID(double* Input,
          double* Output,
          double* Setpoint,
-         double Kp,
-         double Ki,
-         double Kd,
+         PID::pid_tuning_t tuning,
          PID::pid_proportional_mode_t POn,
          PID::pid_direction_t ControllerDirection) {
   myOutput = Output;
@@ -28,7 +26,7 @@ PID::PID(double* Input,
                                  //the arduino pwm limits
 
   PID::SetControllerDirection(ControllerDirection);
-  PID::SetTunings(Kp, Ki, Kd, POn);
+  PID::SetTunings(tuning, POn);
 }
 
 /*Constructor (...)*********************************************************
@@ -39,11 +37,9 @@ PID::PID(double* Input,
 PID::PID(double* Input,
          double* Output,
          double* Setpoint,
-         double Kp,
-         double Ki,
-         double Kd,
+         PID::pid_tuning_t tuning,
          PID::pid_direction_t ControllerDirection)
-    : PID::PID(Input, Output, Setpoint, Kp, Ki, Kd, PID::pid_proportional_mode_t::on_error, ControllerDirection) {
+    : PID::PID(Input, Output, Setpoint, tuning, PID::pid_proportional_mode_t::on_error, ControllerDirection) {
 }
 
 /* Compute() **********************************************************************
@@ -60,11 +56,11 @@ bool PID::Compute() {
   double input = *myInput;
   double error = *mySetpoint - input;
   double dInput = (input - lastInput);
-  outputSum += (ki * error);
+  outputSum += (tuning.Ki * error);
 
   /*Add Proportional on Measurement, if P_ON_M is specified*/
   if (!pOnE)
-    outputSum -= kp * dInput;
+    outputSum -= tuning.Kp * dInput;
 
   if (outputSum > outMax)
     outputSum = outMax;
@@ -74,12 +70,12 @@ bool PID::Compute() {
   /*Add Proportional on Error, if P_ON_E is specified*/
   double output;
   if (pOnE)
-    output = kp * error;
+    output = tuning.Kp * error;
   else
     output = 0;
 
   /*Compute Rest of PID Output*/
-  output += outputSum - kd * dInput;
+  output += outputSum - tuning.Kd * dInput;
 
   if (output > outMax)
     output = outMax;
@@ -97,33 +93,27 @@ bool PID::Compute() {
  * it's called automatically from the constructor, but tunings can also
  * be adjusted on the fly during normal operation
  ******************************************************************************/
-void PID::SetTunings(double Kp, double Ki, double Kd, int POn) {
-  if (Kp < 0 || Ki < 0 || Kd < 0)
+void PID::SetTunings(PID::pid_tuning_t tuning, PID::pid_proportional_mode_t POn) {
+  if (tuning.Kp < 0 || tuning.Ki < 0 || tuning.Kd < 0)
     return;
 
   pOn = POn;
   pOnE = POn == PID::pid_proportional_mode_t::on_error;
 
-  dispKp = Kp;
-  dispKi = Ki;
-  dispKd = Kd;
-
-  kp = Kp;
-  ki = Ki;
-  kd = Kd;
+  tuning = dispTuning = tuning;
 
   if (controllerDirection == REVERSE) {
-    kp = (0 - kp);
-    ki = (0 - ki);
-    kd = (0 - kd);
+    tuning.Kp = (0 - tuning.Kp);
+    tuning.Ki = (0 - tuning.Ki);
+    tuning.Kd = (0 - tuning.Kd);
   }
 }
 
 /* SetTunings(...)*************************************************************
  * Set Tunings using the last-rembered POn setting
  ******************************************************************************/
-void PID::SetTunings(double Kp, double Ki, double Kd) {
-  SetTunings(Kp, Ki, Kd, pOn);
+void PID::SetTunings(PID::pid_tuning_t tuning) {
+  SetTunings(tuning, pOn);
 }
 
 /* SetOutputLimits(...)****************************************************
@@ -187,9 +177,9 @@ void PID::Initialize() {
  ******************************************************************************/
 void PID::SetControllerDirection(PID::pid_direction_t Direction) {
   if (inAuto && Direction != controllerDirection) {
-    kp = (0 - kp);
-    ki = (0 - ki);
-    kd = (0 - kd);
+    tuning.Kp = (0 - tuning.Kp);
+    tuning.Ki = (0 - tuning.Ki);
+    tuning.Kd = (0 - tuning.Kd);
   }
   controllerDirection = Direction;
 }
@@ -199,8 +189,6 @@ void PID::SetControllerDirection(PID::pid_direction_t Direction) {
  * functions query the internal state of the PID.  they're here for display
  * purposes.  this are the functions the PID Front-end uses for example
  ******************************************************************************/
-double PID::GetKp() { return dispKp; }
-double PID::GetKi() { return dispKi; }
-double PID::GetKd() { return dispKd; }
+PID::pid_tuning_t PID::GetTunings() { return dispTuning; }
 PID::pid_mode_t PID::GetMode() { return inAuto ? PID::pid_mode_t::AUTOMATIC : PID::pid_mode_t::MANUAL; }
 PID::pid_direction_t PID::GetDirection() { return controllerDirection; }

@@ -93,14 +93,14 @@ bool PID::Compute() {
  * it's called automatically from the constructor, but tunings can also
  * be adjusted on the fly during normal operation
  ******************************************************************************/
-void PID::SetTunings(PID::pid_tuning_t tuning, PID::pid_proportional_mode_t POn) {
-  if (tuning.Kp < 0 || tuning.Ki < 0 || tuning.Kd < 0)
+void PID::SetTunings(PID::pid_tuning_t Ptuning, PID::pid_proportional_mode_t POn) {
+  if (Ptuning.Kp < 0 || Ptuning.Ki < 0 || Ptuning.Kd < 0)
     return;
 
   pOn = POn;
   pOnE = POn == PID::pid_proportional_mode_t::on_error;
 
-  tuning = dispTuning = tuning;
+  tuning = dispTuning = Ptuning;
 
   if (controllerDirection == REVERSE) {
     tuning.Kp = (0 - tuning.Kp);
@@ -112,8 +112,8 @@ void PID::SetTunings(PID::pid_tuning_t tuning, PID::pid_proportional_mode_t POn)
 /* SetTunings(...)*************************************************************
  * Set Tunings using the last-rembered POn setting
  ******************************************************************************/
-void PID::SetTunings(PID::pid_tuning_t tuning) {
-  SetTunings(tuning, pOn);
+void PID::SetTunings(PID::pid_tuning_t Ptuning) {
+  SetTunings(Ptuning, pOn);
 }
 
 /* SetOutputLimits(...)****************************************************

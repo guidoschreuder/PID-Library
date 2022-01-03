@@ -7,6 +7,8 @@
 
 #include "PID.h"
 
+#define CLAMP_VAL(in, min, max) ((in < min) ? min : (in > max ? max : in))
+
 /*Constructor (...)*********************************************************
  *    The parameters specified here are those for for which we can't set up
  *    reliable defaults, so we need to have the user set them.
@@ -62,10 +64,7 @@ bool PID::Compute() {
   if (pOn != PID::pid_proportional_mode_t::on_error)
     outputSum -= tuning.Kp * dInput;
 
-  if (outputSum > outMax)
-    outputSum = outMax;
-  else if (outputSum < outMin)
-    outputSum = outMin;
+  outputSum = CLAMP_VAL(outputSum, outMin, outMax);
 
   /*Add Proportional on Error, if P_ON_E is specified*/
   double output;
@@ -77,11 +76,7 @@ bool PID::Compute() {
   /*Compute Rest of PID Output*/
   output += outputSum - tuning.Kd * dInput;
 
-  if (output > outMax)
-    output = outMax;
-  else if (output < outMin)
-    output = outMin;
-  *myOutput = output;
+  *myOutput = CLAMP_VAL(output, outMin, outMax);
 
   /*Remember some variables for next time*/
   lastInput = input;
@@ -130,15 +125,8 @@ void PID::SetOutputLimits(double Min, double Max) {
   outMax = Max;
 
   if (mode == pid_mode_t::AUTOMATIC) {
-    if (*myOutput > outMax)
-      *myOutput = outMax;
-    else if (*myOutput < outMin)
-      *myOutput = outMin;
-
-    if (outputSum > outMax)
-      outputSum = outMax;
-    else if (outputSum < outMin)
-      outputSum = outMin;
+    *myOutput = CLAMP_VAL(*myOutput, outMin, outMax);
+    outputSum = CLAMP_VAL(outputSum, outMin, outMax);
   }
 }
 
@@ -161,10 +149,7 @@ void PID::SetMode(PID::pid_mode_t Mode) {
 void PID::Initialize() {
   outputSum = *myOutput;
   lastInput = *myInput;
-  if (outputSum > outMax)
-    outputSum = outMax;
-  else if (outputSum < outMin)
-    outputSum = outMin;
+  outputSum = CLAMP_VAL(outputSum, outMin, outMax);
 }
 
 /* SetControllerDirection(...)*************************************************

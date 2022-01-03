@@ -11,8 +11,14 @@
  *    The parameters specified here are those for for which we can't set up
  *    reliable defaults, so we need to have the user set them.
  ***************************************************************************/
-PID::PID(double* Input, double* Output, double* Setpoint,
-         double Kp, double Ki, double Kd, int POn, int ControllerDirection) {
+PID::PID(double* Input,
+         double* Output,
+         double* Setpoint,
+         double Kp,
+         double Ki,
+         double Kd,
+         PID::pid_proportional_mode_t POn,
+         PID::pid_direction_t ControllerDirection) {
   myOutput = Output;
   myInput = Input;
   mySetpoint = Setpoint;
@@ -30,9 +36,14 @@ PID::PID(double* Input, double* Output, double* Setpoint,
  *    to use Proportional on Error without explicitly saying so
  ***************************************************************************/
 
-PID::PID(double* Input, double* Output, double* Setpoint,
-         double Kp, double Ki, double Kd, int ControllerDirection)
-    : PID::PID(Input, Output, Setpoint, Kp, Ki, Kd, P_ON_E, ControllerDirection) {
+PID::PID(double* Input,
+         double* Output,
+         double* Setpoint,
+         double Kp,
+         double Ki,
+         double Kd,
+         PID::pid_direction_t ControllerDirection)
+    : PID::PID(Input, Output, Setpoint, Kp, Ki, Kd, PID::pid_proportional_mode_t::on_error, ControllerDirection) {
 }
 
 /* Compute() **********************************************************************
@@ -91,7 +102,7 @@ void PID::SetTunings(double Kp, double Ki, double Kd, int POn) {
     return;
 
   pOn = POn;
-  pOnE = POn == P_ON_E;
+  pOnE = POn == PID::pid_proportional_mode_t::on_error;
 
   dispKp = Kp;
   dispKi = Ki;
@@ -147,8 +158,8 @@ void PID::SetOutputLimits(double Min, double Max) {
  * when the transition from manual to auto occurs, the controller is
  * automatically initialized
  ******************************************************************************/
-void PID::SetMode(int Mode) {
-  bool newAuto = (Mode == AUTOMATIC);
+void PID::SetMode(PID::pid_mode_t Mode) {
+  bool newAuto = (Mode == PID::pid_mode_t::AUTOMATIC);
   if (newAuto && !inAuto) { /*we just went from manual to auto*/
     PID::Initialize();
   }
@@ -174,7 +185,7 @@ void PID::Initialize() {
  * know which one, because otherwise we may increase the output when we should
  * be decreasing.  This is called from the constructor.
  ******************************************************************************/
-void PID::SetControllerDirection(int Direction) {
+void PID::SetControllerDirection(PID::pid_direction_t Direction) {
   if (inAuto && Direction != controllerDirection) {
     kp = (0 - kp);
     ki = (0 - ki);
@@ -191,5 +202,5 @@ void PID::SetControllerDirection(int Direction) {
 double PID::GetKp() { return dispKp; }
 double PID::GetKi() { return dispKi; }
 double PID::GetKd() { return dispKd; }
-int PID::GetMode() { return inAuto ? AUTOMATIC : MANUAL; }
-int PID::GetDirection() { return controllerDirection; }
+PID::pid_mode_t PID::GetMode() { return inAuto ? PID::pid_mode_t::AUTOMATIC : PID::pid_mode_t::MANUAL; }
+PID::pid_direction_t PID::GetDirection() { return controllerDirection; }

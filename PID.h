@@ -5,22 +5,28 @@
 class PID {
   public:
 //Constants used in some of the functions below
-#define AUTOMATIC 1
-#define MANUAL 0
-#define DIRECT 0
-#define REVERSE 1
-#define P_ON_M 0
-#define P_ON_E 1
+  typedef enum {
+    MANUAL,
+    AUTOMATIC,
+  } pid_mode_t;
+  typedef enum {
+    DIRECT,
+    REVERSE,
+  } pid_direction_t;
+  typedef enum {
+    on_measurement,
+    on_error,
+  } pid_proportional_mode_t;
 
   //commonly used functions **************************************************************************
   PID(double *, double *, double *,       // * constructor.  links the PID to the Input, Output, and
-      double, double, double, int, int);  //   Setpoint.  Initial tuning parameters are also set here.
+      double, double, double, PID::pid_proportional_mode_t, PID::pid_direction_t);  //   Setpoint.  Initial tuning parameters are also set here.
                                           //   (overload for specifying proportional mode)
 
   PID(double *, double *, double *,  // * constructor.  links the PID to the Input, Output, and
-      double, double, double, int);  //   Setpoint.  Initial tuning parameters are also set here
+      double, double, double, PID::pid_direction_t);  //   Setpoint.  Initial tuning parameters are also set here
 
-  void SetMode(int Mode);  // * sets PID to either Manual (0) or Auto (non-0)
+  void SetMode(PID::pid_mode_t Mode);  // * sets PID to either Manual (0) or Auto (non-0)
 
   bool Compute();  // * performs the PID calculation.  it should be
                    //   called every time loop() cycles. ON/OFF  can be set using SetMode
@@ -36,7 +42,7 @@ class PID {
   void SetTunings(double, double,  // * overload for specifying proportional mode
                   double, int);
 
-  void SetControllerDirection(int);  // * Sets the Direction, or "Action" of the controller. DIRECT
+  void SetControllerDirection(PID::pid_direction_t);  // * Sets the Direction, or "Action" of the controller. DIRECT
                                      //   means the output will increase when error is positive. REVERSE
                                      //   means the opposite.  it's very unlikely that this will be needed
                                      //   once it is set in the constructor.
@@ -45,8 +51,8 @@ class PID {
   double GetKp();      // These functions query the pid for interal values.
   double GetKi();      //  they were created mainly for the pid front-end,
   double GetKd();      // where it's important to know what is actually
-  int GetMode();       //  inside the PID.
-  int GetDirection();  //
+  PID::pid_mode_t GetMode();       //  inside the PID.
+  PID::pid_direction_t GetDirection();  //
 
   private:
   void Initialize();
@@ -59,7 +65,7 @@ class PID {
   double ki;  // * (I)ntegral Tuning Parameter
   double kd;  // * (D)erivative Tuning Parameter
 
-  int controllerDirection;
+  PID::pid_direction_t controllerDirection;
   int pOn;
 
   double *myInput;     // * Pointers to the Input, Output, and Setpoint variables

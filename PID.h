@@ -60,10 +60,10 @@ class PID {
                                      //   once it is set in the constructor.
 
   //Display functions ****************************************************************
-  PID::pid_tuning_t GetTunings();  // This function query the pid for interal values.
-                                   //  they were created mainly for the pid front-end,
+  PID::pid_tuning_t GetTunings();  // These functions query the pid for interal values.
+                                   // they were created mainly for the pid front-end,
                                    // where it's important to know what is actually
-  PID::pid_mode_t GetMode();       //  inside the PID.
+  PID::pid_mode_t GetMode();       // inside the PID.
   PID::pid_direction_t GetDirection();  //
 
   private:

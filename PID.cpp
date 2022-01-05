@@ -18,7 +18,6 @@ PID::PID(double* Input,
          double* Output,
          double* Setpoint,
          PID::tuning_t tuning,
-         PID::proportional_mode_t POn,
          PID::direction_t ControllerDirection) {
   myOutput = Output;
   myInput = Input;
@@ -29,20 +28,7 @@ PID::PID(double* Input,
                                  //the arduino pwm limits
 
   PID::SetControllerDirection(ControllerDirection);
-  PID::SetTunings(tuning, POn);
-}
-
-/*Constructor (...)*********************************************************
- *    To allow backwards compatability for v1.1, or for people that just want
- *    to use Proportional on Error without explicitly saying so
- ***************************************************************************/
-
-PID::PID(double* Input,
-         double* Output,
-         double* Setpoint,
-         PID::tuning_t tuning,
-         PID::direction_t ControllerDirection)
-    : PID::PID(Input, Output, Setpoint, tuning, PID::proportional_mode_t::on_error, ControllerDirection) {
+  PID::SetTunings(tuning);
 }
 
 /* Compute() **********************************************************************
@@ -62,14 +48,14 @@ bool PID::Compute() {
   outputSum += (PARAM(controllerDirection, tuning.Ki) * error);
 
   /*Add Proportional on Measurement, if P_ON_M is specified*/
-  if (pOn != PID::proportional_mode_t::on_error)
+  if (tuning.prop_on != PID::proportional_mode_t::on_error)
     outputSum -= (PARAM(controllerDirection, tuning.Kp) * dInput);
 
   outputSum = CLAMP_VAL(outputSum, outMin, outMax);
 
   /*Add Proportional on Error, if P_ON_E is specified*/
   double output;
-  if (pOn == PID::proportional_mode_t::on_error)
+  if (tuning.prop_on == PID::proportional_mode_t::on_error)
     output = PARAM(controllerDirection, tuning.Kp) * error;
   else
     output = 0;
@@ -89,19 +75,11 @@ bool PID::Compute() {
  * it's called automatically from the constructor, but tunings can also
  * be adjusted on the fly during normal operation
  ******************************************************************************/
-void PID::SetTunings(PID::tuning_t Ptuning, PID::proportional_mode_t POn) {
+void PID::SetTunings(PID::tuning_t Ptuning) {
   if (Ptuning.Kp < 0 || Ptuning.Ki < 0 || Ptuning.Kd < 0)
     return;
 
-  pOn = POn;
   tuning = Ptuning;
-}
-
-/* SetTunings(...)*************************************************************
- * Set Tunings using the last-rembered POn setting
- ******************************************************************************/
-void PID::SetTunings(PID::tuning_t Ptuning) {
-  SetTunings(Ptuning, pOn);
 }
 
 /* SetOutputLimits(...)****************************************************

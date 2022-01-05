@@ -21,17 +21,10 @@ class PID {
     double Kp,
         Ki,
         Kd;
+    proportional_mode_t prop_on;
   } tuning_t;
 
   //commonly used functions **************************************************************************
-  PID(double *,
-      double *,
-      double *,       // * constructor.  links the PID to the Input, Output, and
-      PID::tuning_t,
-      PID::proportional_mode_t,
-      PID::direction_t);  //   Setpoint.  Initial tuning parameters are also set here.
-                                          //   (overload for specifying proportional mode)
-
   PID(double *,
       double *,
       double *,  // * constructor.  links the PID to the Input, Output, and
@@ -51,8 +44,6 @@ class PID {
   void SetTunings(PID::tuning_t);  // * While most users will set the tunings once in the
                                    //   constructor, this function gives the user the option
                                    //   of changing tunings during runtime for Adaptive control
-  void SetTunings(PID::tuning_t,  // * overload for specifying proportional mode
-                  PID::proportional_mode_t);
 
   void SetControllerDirection(PID::direction_t);  // * Sets the Direction, or "Action" of the controller. DIRECT
                                      //   means the output will increase when error is positive. REVERSE
@@ -71,7 +62,6 @@ class PID {
 
   PID::tuning_t tuning;
   PID::direction_t controllerDirection;
-  PID::proportional_mode_t pOn;
   PID::mode_t mode;
 
   double *myInput;     // * Pointers to the Input, Output, and Setpoint variables

@@ -8,7 +8,7 @@
 #include "PID.h"
 
 #define CLAMP_VAL(in, min, max) ((in < min) ? min : (in > max ? max : in))
-#define PID_PARAM(dir, value) (dir == PID::pid_direction_t::DIRECT ? value : -1 * value)
+#define PARAM(dir, value) (dir == PID::direction_t::DIRECT ? value : -1 * value)
 
 /*Constructor (...)*********************************************************
  *    The parameters specified here are those for for which we can't set up
@@ -17,13 +17,13 @@
 PID::PID(double* Input,
          double* Output,
          double* Setpoint,
-         PID::pid_tuning_t tuning,
-         PID::pid_proportional_mode_t POn,
-         PID::pid_direction_t ControllerDirection) {
+         PID::tuning_t tuning,
+         PID::proportional_mode_t POn,
+         PID::direction_t ControllerDirection) {
   myOutput = Output;
   myInput = Input;
   mySetpoint = Setpoint;
-  mode = pid_mode_t::AUTOMATIC;
+  mode = mode_t::AUTOMATIC;
 
   PID::SetOutputLimits(0, 255);  //default output limit corresponds to
                                  //the arduino pwm limits
@@ -40,9 +40,9 @@ PID::PID(double* Input,
 PID::PID(double* Input,
          double* Output,
          double* Setpoint,
-         PID::pid_tuning_t tuning,
-         PID::pid_direction_t ControllerDirection)
-    : PID::PID(Input, Output, Setpoint, tuning, PID::pid_proportional_mode_t::on_error, ControllerDirection) {
+         PID::tuning_t tuning,
+         PID::direction_t ControllerDirection)
+    : PID::PID(Input, Output, Setpoint, tuning, PID::proportional_mode_t::on_error, ControllerDirection) {
 }
 
 /* Compute() **********************************************************************
@@ -52,30 +52,30 @@ PID::PID(double* Input,
  *   false when nothing has been done.
  **********************************************************************************/
 bool PID::Compute() {
-  if (mode != pid_mode_t::AUTOMATIC)
+  if (mode != mode_t::AUTOMATIC)
     return false;
 
   /*Compute all the working error variables*/
   double input = *myInput;
   double error = *mySetpoint - input;
   double dInput = (input - lastInput);
-  outputSum += (PID_PARAM(controllerDirection, tuning.Ki) * error);
+  outputSum += (PARAM(controllerDirection, tuning.Ki) * error);
 
   /*Add Proportional on Measurement, if P_ON_M is specified*/
-  if (pOn != PID::pid_proportional_mode_t::on_error)
-    outputSum -= (PID_PARAM(controllerDirection, tuning.Kp) * dInput);
+  if (pOn != PID::proportional_mode_t::on_error)
+    outputSum -= (PARAM(controllerDirection, tuning.Kp) * dInput);
 
   outputSum = CLAMP_VAL(outputSum, outMin, outMax);
 
   /*Add Proportional on Error, if P_ON_E is specified*/
   double output;
-  if (pOn == PID::pid_proportional_mode_t::on_error)
-    output = PID_PARAM(controllerDirection, tuning.Kp) * error;
+  if (pOn == PID::proportional_mode_t::on_error)
+    output = PARAM(controllerDirection, tuning.Kp) * error;
   else
     output = 0;
 
   /*Compute Rest of PID Output*/
-  output += outputSum - PID_PARAM(controllerDirection, tuning.Kd) * dInput;
+  output += outputSum - PARAM(controllerDirection, tuning.Kd) * dInput;
 
   *myOutput = CLAMP_VAL(output, outMin, outMax);
 
@@ -89,7 +89,7 @@ bool PID::Compute() {
  * it's called automatically from the constructor, but tunings can also
  * be adjusted on the fly during normal operation
  ******************************************************************************/
-void PID::SetTunings(PID::pid_tuning_t Ptuning, PID::pid_proportional_mode_t POn) {
+void PID::SetTunings(PID::tuning_t Ptuning, PID::proportional_mode_t POn) {
   if (Ptuning.Kp < 0 || Ptuning.Ki < 0 || Ptuning.Kd < 0)
     return;
 
@@ -100,7 +100,7 @@ void PID::SetTunings(PID::pid_tuning_t Ptuning, PID::pid_proportional_mode_t POn
 /* SetTunings(...)*************************************************************
  * Set Tunings using the last-rembered POn setting
  ******************************************************************************/
-void PID::SetTunings(PID::pid_tuning_t Ptuning) {
+void PID::SetTunings(PID::tuning_t Ptuning) {
   SetTunings(Ptuning, pOn);
 }
 
@@ -118,7 +118,7 @@ void PID::SetOutputLimits(double Min, double Max) {
   outMin = Min;
   outMax = Max;
 
-  if (mode == pid_mode_t::AUTOMATIC) {
+  if (mode == mode_t::AUTOMATIC) {
     *myOutput = CLAMP_VAL(*myOutput, outMin, outMax);
     outputSum = CLAMP_VAL(outputSum, outMin, outMax);
   }
@@ -129,8 +129,8 @@ void PID::SetOutputLimits(double Min, double Max) {
  * when the transition from manual to auto occurs, the controller is
  * automatically initialized
  ******************************************************************************/
-void PID::SetMode(PID::pid_mode_t Mode) {
-  if (Mode == PID::pid_mode_t::AUTOMATIC && mode != Mode) { /*we just went from manual to auto*/
+void PID::SetMode(PID::mode_t Mode) {
+  if (Mode == PID::mode_t::AUTOMATIC && mode != Mode) { /*we just went from manual to auto*/
     PID::Initialize();
   }
   mode = Mode;
@@ -152,7 +152,7 @@ void PID::Initialize() {
  * know which one, because otherwise we may increase the output when we should
  * be decreasing.  This is called from the constructor.
  ******************************************************************************/
-void PID::SetControllerDirection(PID::pid_direction_t Direction) {
+void PID::SetControllerDirection(PID::direction_t Direction) {
   controllerDirection = Direction;
 }
 
@@ -161,6 +161,6 @@ void PID::SetControllerDirection(PID::pid_direction_t Direction) {
  * functions query the internal state of the PID.  they're here for display
  * purposes.  this are the functions the PID Front-end uses for example
  ******************************************************************************/
-PID::pid_tuning_t PID::GetTunings() { return tuning; }
-PID::pid_mode_t PID::GetMode() { return mode; }
-PID::pid_direction_t PID::GetDirection() { return controllerDirection; }
+PID::tuning_t PID::GetTunings() { return tuning; }
+PID::mode_t PID::GetMode() { return mode; }
+PID::direction_t PID::GetDirection() { return controllerDirection; }
